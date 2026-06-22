@@ -1,0 +1,105 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+.marker-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #dc2626 !important;
+  font-weight: 500 !important;
+  font-size: var(--marker-label-size, 12px) !important;
+  white-space: nowrap !important;
+  padding: 0 !important;
+  transition: font-size 0.15s ease;
+  text-shadow:
+    -1px -1px 0 white,
+    1px -1px 0 white,
+    -1px 1px 0 white,
+    1px 1px 0 white !important;
+}
+
+.marker-label::before {
+  display: none !important;
+}
+
+.user-loc-pulse {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+.user-loc-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border-radius: 50%;
+  background: #8b5cf6;
+  border: 3px solid white;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.3);
+  animation: loc-color 3s ease-in-out infinite;
+}
+
+.user-loc-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.25);
+  animation: loc-ping 3s ease-out infinite;
+}
+
+@keyframes loc-ping {
+  0% { transform: scale(0.5); opacity: 0.8; }
+  70% { transform: scale(1.2); opacity: 0; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+
+@keyframes loc-color {
+  0%, 100% { background: #8b5cf6; }
+  50% { background: #ec4899; }
+}
+
+.distance-label {
+  background: rgba(0, 0, 0, 0.75) !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: white !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  white-space: nowrap !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+}
+
+.distance-label::before {
+  display: none !important;
+}
+
+.distance-label-total {
+  background: #f97316 !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: white !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  white-space: nowrap !important;
+  padding: 3px 10px !important;
+  border-radius: 4px !important;
+}
+
+.distance-label-total::before {
+  display: none !important;
+}
