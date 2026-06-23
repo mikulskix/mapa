@@ -31,7 +31,7 @@ export function parseCsv(file: File): Promise<{ valid: MarkerFormData[]; invalid
           valid.push({
             name,
             description: row.description?.trim() || '',
-            color: row.color?.trim() || '#ef4444',
+            color: row.color?.trim() || '#3b82f6',
             lat,
             lng,
           });

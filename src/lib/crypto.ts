@@ -18,7 +18,7 @@ export function generateSalt(): string {
   return bufferToBase64(salt.buffer);
 }
 
-export async function deriveKey(password: string, saltBase64: string): Promise<CryptoKey> {
+export async function deriveKey(password: string, saltBase64: string, extractable = false): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
@@ -37,6 +37,23 @@ export async function deriveKey(password: string, saltBase64: string): Promise<C
     },
     keyMaterial,
     { name: 'AES-GCM', length: 256 },
+    extractable,
+    ['encrypt', 'decrypt']
+  );
+}
+
+// Export an AES-GCM key as base64 raw bytes (key must be extractable)
+export async function exportKeyRaw(key: CryptoKey): Promise<string> {
+  const raw = await crypto.subtle.exportKey('raw', key);
+  return bufferToBase64(raw);
+}
+
+// Import base64 raw bytes back into a (non-extractable) AES-GCM key
+export async function importKeyRaw(rawBase64: string): Promise<CryptoKey> {
+  return crypto.subtle.importKey(
+    'raw',
+    base64ToBuffer(rawBase64),
+    { name: 'AES-GCM' },
     false,
     ['encrypt', 'decrypt']
   );
