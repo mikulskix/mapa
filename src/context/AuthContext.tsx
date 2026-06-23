@@ -86,7 +86,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setCryptoKey(null);
     setUserStatus(null);
-    localStorage.removeItem('map-view');
   }, []);
 
   return (
