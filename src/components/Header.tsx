@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useDarkMode } from '../hooks/useDarkMode';
+import ChangePassphraseModal from './ChangePassphraseModal';
 
 interface Props {
   satellite: boolean;
@@ -11,6 +13,7 @@ interface Props {
 export default function Header({ satellite, onToggleLayer, onToggleSidebar }: Props) {
   const { logout, user, isAdmin } = useAuth();
   const { dark, toggle } = useDarkMode();
+  const [showChangePass, setShowChangePass] = useState(false);
 
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex items-center justify-between z-50 shrink-0">
@@ -60,6 +63,18 @@ export default function Header({ satellite, onToggleLayer, onToggleSidebar }: Pr
         </button>
 
         {isAdmin && (
+          <button
+            onClick={() => setShowChangePass(true)}
+            className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
+            title="Zmień hasło bazy"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+          </button>
+        )}
+
+        {isAdmin && (
           <Link
             to="/admin"
             className="px-3 py-1.5 text-sm rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/50"
@@ -79,6 +94,8 @@ export default function Header({ satellite, onToggleLayer, onToggleSidebar }: Pr
           Wyloguj
         </button>
       </div>
+
+      {showChangePass && <ChangePassphraseModal onClose={() => setShowChangePass(false)} />}
     </header>
   );
 }
