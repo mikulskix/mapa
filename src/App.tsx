@@ -9,7 +9,7 @@ import AdminPage from './pages/AdminPage';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/mapa">
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
