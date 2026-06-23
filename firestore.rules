@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'mikulskix@gmail.com';
+    }
+
+    function isApproved() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)/profile/main).data.status == 'approved';
+    }
+
+    // Per-user profile (auth identity, approval status)
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, update: if isAdmin();
+    }
+
+    // Registrations list (admin approval panel)
+    match /registrations/{docId} {
+      allow create: if request.auth != null && request.auth.uid == docId;
+      allow read, update: if isAdmin();
+    }
+
+    // Workspace config: salt + verifier for the shared passphrase.
+    // Any logged-in user may read (salt is not secret); only admin writes/creates it.
+    match /workspace/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Shared, client-side-encrypted markers — approved users have full access.
+    match /markers/{id} {
+      allow read, write: if isApproved();
+    }
+
+    // Shared backups — approved users may read and create.
+    // (Restore overwrites everything but is restricted to admin in the UI.)
+    match /backups/{id} {
+      allow read, write: if isApproved();
+    }
+  }
+}
