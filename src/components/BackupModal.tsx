@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import type { BackupInfo } from '../hooks/useMarkers';
 
 interface Props {
+  isAdmin: boolean;
   onClose: () => void;
   onCreateBackup: () => Promise<string | undefined>;
   onListBackups: () => Promise<BackupInfo[]>;
   onRestoreBackup: (id: string) => Promise<void>;
 }
 
-export default function BackupModal({ onClose, onCreateBackup, onListBackups, onRestoreBackup }: Props) {
+export default function BackupModal({ isAdmin, onClose, onCreateBackup, onListBackups, onRestoreBackup }: Props) {
   const [backups, setBackups] = useState<BackupInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -96,13 +97,15 @@ export default function BackupModal({ onClose, onCreateBackup, onListBackups, on
                     <p className="text-sm font-medium dark:text-white">{formatDate(b.createdAt)}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{b.markerCount} pinezek</p>
                   </div>
-                  <button
-                    onClick={() => handleRestore(b.id)}
-                    disabled={restoring === b.id}
-                    className="px-3 py-1 text-xs rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
-                  >
-                    {restoring === b.id ? 'Przywracam...' : 'Przywróć'}
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleRestore(b.id)}
+                      disabled={restoring === b.id}
+                      className="px-3 py-1 text-xs rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                    >
+                      {restoring === b.id ? 'Przywracam...' : 'Przywróć'}
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>

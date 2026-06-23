@@ -24,24 +24,24 @@ export interface BackupInfo {
 }
 
 export function useMarkers() {
-  const { user, cryptoKey } = useAuth();
+  const { workspaceKey } = useAuth();
   const [markers, setMarkers] = useState<MarkerData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || !cryptoKey) {
+    if (!workspaceKey) {
       setMarkers([]);
       setLoading(false);
       return;
     }
 
-    const col = collection(db, 'users', user.uid, 'markers');
+    const col = collection(db, 'markers');
     const unsub = onSnapshot(col, async (snapshot) => {
       const decrypted: MarkerData[] = [];
       for (const docSnap of snapshot.docs) {
         try {
           const data = docSnap.data() as EncryptedMarker;
-          const plain = (await decrypt(data.encryptedData, data.iv, cryptoKey)) as MarkerFormData;
+          const plain = (await decrypt(data.encryptedData, data.iv, workspaceKey)) as MarkerFormData;
           decrypted.push({
             id: docSnap.id,
             ...plain,
@@ -57,15 +57,15 @@ export function useMarkers() {
     });
 
     return unsub;
-  }, [user, cryptoKey]);
+  }, [workspaceKey]);
 
   // Auto-backup: once per day
   useEffect(() => {
-    if (!user || !cryptoKey || loading) return;
+    if (!workspaceKey || loading) return;
 
     const checkAndBackup = async () => {
       try {
-        const backupsCol = collection(db, 'users', user.uid, 'backups');
+        const backupsCol = collection(db, 'backups');
         const q2 = query(backupsCol, orderBy('createdAt', 'desc'), limit(1));
         const snap = await getDocs(q2);
         const lastBackup = snap.docs[0]?.data()?.createdAt || 0;
@@ -80,11 +80,11 @@ export function useMarkers() {
     };
 
     checkAndBackup();
-  }, [user, cryptoKey, loading, markers.length]);
+  }, [workspaceKey, loading, markers.length]);
 
   const createBackupInternal = useCallback(async () => {
-    if (!user || !cryptoKey) return;
-    const markersCol = collection(db, 'users', user.uid, 'markers');
+    if (!workspaceKey) return;
+    const markersCol = collection(db, 'markers');
     const snap = await getDocs(markersCol);
 
     const backupId = `backup_${Date.now()}`;
@@ -93,7 +93,7 @@ export function useMarkers() {
       markerDocs[d.id] = d.data();
     });
 
-    await setDoc(doc(db, 'users', user.uid, 'backups', backupId), {
+    await setDoc(doc(db, 'backups', backupId), {
       createdAt: Date.now(),
       markerCount: snap.docs.length,
       markers: markerDocs,
@@ -101,7 +101,7 @@ export function useMarkers() {
 
     // Delete backups older than 7 days
     const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const allBackups = await getDocs(collection(db, 'users', user.uid, 'backups'));
+    const allBackups = await getDocs(collection(db, 'backups'));
     for (const d of allBackups.docs) {
       if ((d.data().createdAt || 0) < sevenDaysAgo) {
         await deleteDoc(d.ref);
@@ -109,49 +109,47 @@ export function useMarkers() {
     }
 
     return backupId;
-  }, [user, cryptoKey]);
+  }, [workspaceKey]);
 
   const addMarker = useCallback(
     async (form: MarkerFormData) => {
-      if (!user || !cryptoKey) return;
+      if (!workspaceKey) return;
       const id = crypto.randomUUID();
-      const { encryptedData, iv } = await encrypt(form, cryptoKey);
+      const { encryptedData, iv } = await encrypt(form, workspaceKey);
       const now = Date.now();
-      await setDoc(doc(db, 'users', user.uid, 'markers', id), {
+      await setDoc(doc(db, 'markers', id), {
         encryptedData,
         iv,
         createdAt: now,
         updatedAt: now,
       });
     },
-    [user, cryptoKey]
+    [workspaceKey]
   );
 
   const updateMarker = useCallback(
     async (id: string, form: MarkerFormData) => {
-      if (!user || !cryptoKey) return;
-      const { encryptedData, iv } = await encrypt(form, cryptoKey);
+      if (!workspaceKey) return;
+      const { encryptedData, iv } = await encrypt(form, workspaceKey);
       await setDoc(
-        doc(db, 'users', user.uid, 'markers', id),
+        doc(db, 'markers', id),
         { encryptedData, iv, updatedAt: Date.now() },
         { merge: true }
       );
     },
-    [user, cryptoKey]
+    [workspaceKey]
   );
 
   const removeMarker = useCallback(
     async (id: string) => {
-      if (!user) return;
-      await deleteDoc(doc(db, 'users', user.uid, 'markers', id));
+      await deleteDoc(doc(db, 'markers', id));
     },
-    [user]
+    []
   );
 
   const removeAllMarkers = useCallback(
     async () => {
-      if (!user) return;
-      const col = collection(db, 'users', user.uid, 'markers');
+      const col = collection(db, 'markers');
       const snap = await getDocs(col);
       const chunks = [];
       const docs = snap.docs;
@@ -166,12 +164,12 @@ export function useMarkers() {
         await batch.commit();
       }
     },
-    [user]
+    []
   );
 
   const importMarkers = useCallback(
     async (forms: MarkerFormData[]) => {
-      if (!user || !cryptoKey) return { added: 0, skipped: 0 };
+      if (!workspaceKey) return { added: 0, skipped: 0 };
 
       const existing = new Set(
         markers.map((m) => `${m.name.toLowerCase()}|${m.lat.toFixed(5)}|${m.lng.toFixed(5)}`)
@@ -198,9 +196,9 @@ export function useMarkers() {
         const batch = writeBatch(db);
         for (const form of chunk) {
           const id = crypto.randomUUID();
-          const { encryptedData, iv } = await encrypt(form, cryptoKey);
+          const { encryptedData, iv } = await encrypt(form, workspaceKey);
           const now = Date.now();
-          batch.set(doc(db, 'users', user.uid, 'markers', id), {
+          batch.set(doc(db, 'markers', id), {
             encryptedData,
             iv,
             createdAt: now,
@@ -212,12 +210,11 @@ export function useMarkers() {
 
       return { added: toAdd.length, skipped };
     },
-    [user, cryptoKey, markers]
+    [workspaceKey, markers]
   );
 
   const listBackups = useCallback(async (): Promise<BackupInfo[]> => {
-    if (!user) return [];
-    const backupsCol = collection(db, 'users', user.uid, 'backups');
+    const backupsCol = collection(db, 'backups');
     const q2 = query(backupsCol, orderBy('createdAt', 'desc'), limit(10));
     const snap = await getDocs(q2);
     return snap.docs.map((d) => ({
@@ -225,20 +222,18 @@ export function useMarkers() {
       createdAt: d.data().createdAt,
       markerCount: d.data().markerCount,
     }));
-  }, [user]);
+  }, []);
 
   const restoreBackup = useCallback(
     async (backupId: string) => {
-      if (!user || !cryptoKey) return;
-
-      const backupDoc = await getDoc(doc(db, 'users', user.uid, 'backups', backupId));
+      const backupDoc = await getDoc(doc(db, 'backups', backupId));
       if (!backupDoc.exists()) throw new Error('Backup nie istnieje');
 
       const backupData = backupDoc.data();
       const markerDocs = backupData.markers as Record<string, { encryptedData: string; iv: string; createdAt: number; updatedAt: number }>;
 
       // Delete current markers
-      const currentCol = collection(db, 'users', user.uid, 'markers');
+      const currentCol = collection(db, 'markers');
       const currentSnap = await getDocs(currentCol);
       const delChunks = [];
       const currentDocs = currentSnap.docs;
@@ -260,12 +255,12 @@ export function useMarkers() {
       for (const chunk of restoreChunks) {
         const batch = writeBatch(db);
         for (const [id, data] of chunk) {
-          batch.set(doc(db, 'users', user.uid, 'markers', id), data);
+          batch.set(doc(db, 'markers', id), data);
         }
         await batch.commit();
       }
     },
-    [user, cryptoKey]
+    []
   );
 
   const createBackup = useCallback(async () => {

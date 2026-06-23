@@ -7,6 +7,7 @@ import type { BackupInfo } from '../hooks/useMarkers';
 
 interface Props {
   markers: MarkerData[];
+  isAdmin: boolean;
   selectedId: string | null;
   onSelectMarker: (marker: MarkerData) => void;
   onImport: (markers: MarkerFormData[]) => Promise<{ added: number; skipped: number }>;
@@ -17,7 +18,7 @@ interface Props {
   onNavigateTo: (marker: MarkerData) => void;
 }
 
-export default function Sidebar({ markers, selectedId, onSelectMarker, onImport, onRemoveAll, onCreateBackup, onListBackups, onRestoreBackup, onNavigateTo }: Props) {
+export default function Sidebar({ markers, isAdmin, selectedId, onSelectMarker, onImport, onRemoveAll, onCreateBackup, onListBackups, onRestoreBackup, onNavigateTo }: Props) {
   const [showImport, setShowImport] = useState(false);
   const [showBackup, setShowBackup] = useState(false);
   const [search, setSearch] = useState('');
@@ -89,13 +90,15 @@ export default function Sidebar({ markers, selectedId, onSelectMarker, onImport,
             >
               Backupy
             </button>
-            <button
-              onClick={handleRemoveAll}
-              disabled={markers.length === 0}
-              className="flex-1 px-2 py-1 text-xs rounded-md bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 disabled:opacity-50"
-            >
-              Usuń wszystkie
-            </button>
+            {isAdmin && (
+              <button
+                onClick={handleRemoveAll}
+                disabled={markers.length === 0}
+                className="flex-1 px-2 py-1 text-xs rounded-md bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 disabled:opacity-50"
+              >
+                Usuń wszystkie
+              </button>
+            )}
           </div>
         </div>
 
@@ -153,6 +156,7 @@ export default function Sidebar({ markers, selectedId, onSelectMarker, onImport,
 
       {showBackup && (
         <BackupModal
+          isAdmin={isAdmin}
           onClose={() => setShowBackup(false)}
           onCreateBackup={onCreateBackup}
           onListBackups={onListBackups}

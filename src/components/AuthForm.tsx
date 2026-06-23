@@ -8,15 +8,31 @@ interface Props {
 }
 
 export default function AuthForm({ mode }: Props) {
-  const { login, register, loading } = useAuth();
+  const { login, register, resetPassword, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleCaptcha = useCallback((token: string) => setCaptchaToken(token), []);
   const handleCaptchaExpire = useCallback(() => setCaptchaToken(null), []);
+
+  async function handleResetPassword() {
+    setError('');
+    setInfo('');
+    if (!email.trim()) {
+      setError('Najpierw wpisz swój adres e-mail');
+      return;
+    }
+    try {
+      await resetPassword(email.trim());
+      setInfo('Wysłaliśmy link do resetu hasła na podany adres e-mail.');
+    } catch {
+      setError('Nie udało się wysłać linku resetującego');
+    }
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -121,6 +137,9 @@ export default function AuthForm({ mode }: Props) {
           {error && (
             <p className="text-red-400 text-sm">{error}</p>
           )}
+          {info && (
+            <p className="text-green-400 text-sm">{info}</p>
+          )}
 
           <button
             type="submit"
@@ -130,6 +149,16 @@ export default function AuthForm({ mode }: Props) {
             {loading ? 'Proszę czekać...' : mode === 'login' ? 'Zaloguj się' : 'Zarejestruj się'}
           </button>
         </form>
+
+        {mode === 'login' && (
+          <button
+            type="button"
+            onClick={handleResetPassword}
+            className="mt-3 w-full text-center text-sm text-gray-400 hover:text-gray-200 hover:underline"
+          >
+            Zapomniałem hasła
+          </button>
+        )}
 
         <p className="mt-4 text-center text-sm text-gray-400">
           {mode === 'login' ? (
