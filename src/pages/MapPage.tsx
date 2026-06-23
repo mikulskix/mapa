@@ -23,6 +23,10 @@ export default function MapPage() {
 
   // Navigation
   const [navigateTo, setNavigateTo] = useState<MarkerData | null>(null);
+  const [fitBounds, setFitBounds] = useState<[[number, number], [number, number]] | null>(null);
+
+  // Selected marker (highlight from list)
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Measure
   const [measurePoints, setMeasurePoints] = useState<[number, number][]>([]);
@@ -85,19 +89,33 @@ export default function MapPage() {
   );
 
   const handleNavigateTo = useCallback((marker: MarkerData) => {
+    setSidebarOpen(false);
+    const startNav = (pos: [number, number]) => {
+      setNavigateTo(marker);
+      setFitBounds([pos, [marker.lat, marker.lng]]);
+      setTimeout(() => setFitBounds(null), 1000);
+    };
     if (!userPosition) {
       setGpsTracking(true);
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setUserPosition([pos.coords.latitude, pos.coords.longitude]);
-          setNavigateTo(marker);
+          const p: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+          setUserPosition(p);
+          startNav(p);
         },
         () => alert('Włącz lokalizację aby nawigować')
       );
     } else {
-      setNavigateTo(marker);
+      startNav(userPosition);
     }
   }, [userPosition]);
+
+  const handleSelectMarker = useCallback((marker: MarkerData) => {
+    setSelectedId(marker.id);
+    setFlyTo({ lat: marker.lat, lng: marker.lng });
+    setSidebarOpen(false);
+    setTimeout(() => setFlyTo(null), 1000);
+  }, []);
 
   function handleStopNavigation() {
     setNavigateTo(null);
@@ -117,12 +135,6 @@ export default function MapPage() {
   function handleUndoMeasure() {
     setMeasurePoints((prev) => prev.slice(0, -1));
   }
-
-  const handleFlyTo = useCallback((lat: number, lng: number) => {
-    setFlyTo({ lat, lng });
-    setSidebarOpen(false);
-    setTimeout(() => setFlyTo(null), 1000);
-  }, []);
 
   const handleImport = useCallback(
     async (forms: MarkerFormData[]) => {
@@ -150,7 +162,7 @@ export default function MapPage() {
       <div className="flex flex-1 overflow-hidden relative">
         {/* Desktop sidebar */}
         <aside className="hidden md:block w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0">
-          <Sidebar markers={markers} onFlyTo={handleFlyTo} onImport={handleImport} onRemoveAll={removeAllMarkers} onCreateBackup={createBackup} onListBackups={listBackups} onRestoreBackup={restoreBackup} onNavigateTo={handleNavigateTo} />
+          <Sidebar markers={markers} selectedId={selectedId} onSelectMarker={handleSelectMarker} onImport={handleImport} onRemoveAll={removeAllMarkers} onCreateBackup={createBackup} onListBackups={listBackups} onRestoreBackup={restoreBackup} onNavigateTo={handleNavigateTo} />
         </aside>
 
         {/* Mobile sidebar overlay */}
@@ -162,7 +174,7 @@ export default function MapPage() {
             />
             <aside className="md:hidden fixed bottom-0 left-0 right-0 h-[60vh] bg-white dark:bg-gray-800 rounded-t-xl shadow-xl z-[1060] overflow-hidden">
               <div className="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mt-2 mb-1" />
-              <Sidebar markers={markers} onFlyTo={handleFlyTo} onImport={handleImport} onRemoveAll={removeAllMarkers} onCreateBackup={createBackup} onListBackups={listBackups} onRestoreBackup={restoreBackup} onNavigateTo={handleNavigateTo} />
+              <Sidebar markers={markers} selectedId={selectedId} onSelectMarker={handleSelectMarker} onImport={handleImport} onRemoveAll={removeAllMarkers} onCreateBackup={createBackup} onListBackups={listBackups} onRestoreBackup={restoreBackup} onNavigateTo={handleNavigateTo} />
             </aside>
           </>
         )}
@@ -176,6 +188,8 @@ export default function MapPage() {
             userPosition={userPosition}
             navigateTo={navigateTo}
             measurePoints={measurePoints}
+            selectedId={selectedId}
+            fitBounds={fitBounds}
             onMapClick={handleMapClick}
             onUpdateMarker={updateMarker}
             onDeleteMarker={removeMarker}
@@ -184,7 +198,7 @@ export default function MapPage() {
           />
 
           {/* Right side buttons */}
-          <div className="fixed bottom-4 right-4 z-[1000] flex flex-col gap-2 items-end">
+          <div className="fixed bottom-4 right-4 z-[1000] flex flex-row gap-2 items-center">
             {/* Measure button */}
             <button
               onClick={handleToggleMeasure}
@@ -227,7 +241,7 @@ export default function MapPage() {
                   setMeasurePoints([]);
                 }
               }}
-              className={`shadow-lg rounded-full p-4 transition-colors ${
+              className={`shadow-lg rounded-full p-3 transition-colors ${
                 mode === 'add'
                   ? 'bg-red-500 text-white hover:bg-red-600'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
@@ -235,11 +249,11 @@ export default function MapPage() {
               title={mode === 'add' ? 'Anuluj dodawanie' : 'Dodaj pinezkę'}
             >
               {mode === 'add' ? (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               ) : (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               )}

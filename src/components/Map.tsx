@@ -10,7 +10,16 @@ const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenS
 const SAT_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 const SAT_ATTR = '&copy; Esri';
 
-function createDotIcon(color: string) {
+function createDotIcon(color: string, selected = false) {
+  if (selected) {
+    return L.divIcon({
+      className: '',
+      html: `<div class="marker-selected"><div style="width:18px;height:18px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 0 0 3px #3b82f6,0 1px 6px rgba(0,0,0,0.5);"></div></div>`,
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
+      popupAnchor: [0, -12],
+    });
+  }
   return L.divIcon({
     className: '',
     html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`,
@@ -36,6 +45,8 @@ interface Props {
   userPosition: [number, number] | null;
   navigateTo: MarkerData | null;
   measurePoints: [number, number][];
+  selectedId: string | null;
+  fitBounds: [[number, number], [number, number]] | null;
   onMapClick: (lat: number, lng: number) => void;
   onUpdateMarker: (id: string, data: MarkerFormData) => void;
   onDeleteMarker: (id: string) => void;
@@ -101,13 +112,24 @@ function FlyToHandler({ flyTo }: { flyTo: { lat: number; lng: number } | null })
   return null;
 }
 
-function ColorMarker({ marker, onUpdate, onDelete, onNavigate }: {
+function FitBoundsHandler({ bounds }: { bounds: [[number, number], [number, number]] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (bounds) {
+      map.flyToBounds(bounds, { padding: [70, 70], maxZoom: 16, duration: 0.8 });
+    }
+  }, [bounds, map]);
+  return null;
+}
+
+function ColorMarker({ marker, selected, onUpdate, onDelete, onNavigate }: {
   marker: MarkerData;
+  selected: boolean;
   onUpdate: (id: string, data: MarkerFormData) => void;
   onDelete: (id: string) => void;
   onNavigate: (marker: MarkerData) => void;
 }) {
-  const icon = useMemo(() => createDotIcon(marker.color || '#ef4444'), [marker.color]);
+  const icon = useMemo(() => createDotIcon(marker.color || '#ef4444', selected), [marker.color, selected]);
 
   return (
     <Marker position={[marker.lat, marker.lng]} icon={icon}>
@@ -135,7 +157,7 @@ function NavigationLine({ from, to }: { from: [number, number]; to: MarkerData }
     <>
       <Polyline
         positions={[from, [to.lat, to.lng]]}
-        pathOptions={{ color: '#3b82f6', weight: 3, dashArray: '10, 8' }}
+        pathOptions={{ color: '#ff6d00', weight: 5, dashArray: '1, 12', lineCap: 'round' }}
       />
       <CircleMarker center={[midLat, midLng]} radius={0}>
         <Tooltip direction="center" permanent className="distance-label">
@@ -201,7 +223,7 @@ function getSavedView(): { center: [number, number]; zoom: number } {
 }
 
 export default function Map({
-  satellite, markers, mode, userPosition, navigateTo, measurePoints,
+  satellite, markers, mode, userPosition, navigateTo, measurePoints, selectedId, fitBounds,
   onMapClick, onUpdateMarker, onDeleteMarker, onNavigateTo, flyTo,
 }: Props) {
   const saved = getSavedView();
@@ -220,6 +242,7 @@ export default function Map({
       <ZoomLabelScaler />
       <ClickHandler mode={mode} onMapClick={onMapClick} />
       <FlyToHandler flyTo={flyTo} />
+      <FitBoundsHandler bounds={fitBounds} />
 
       {userPosition && (
         <Marker position={userPosition} icon={userLocationIcon}>
@@ -233,6 +256,7 @@ export default function Map({
         <ColorMarker
           key={m.id}
           marker={m}
+          selected={selectedId === m.id}
           onUpdate={onUpdateMarker}
           onDelete={onDeleteMarker}
           onNavigate={onNavigateTo}

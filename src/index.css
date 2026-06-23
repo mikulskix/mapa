@@ -29,6 +29,16 @@ html, body, #root {
   display: none !important;
 }
 
+.marker-selected {
+  animation: marker-bounce 1.2s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+@keyframes marker-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+}
+
 .user-loc-pulse {
   position: relative;
   width: 40px;

@@ -7,7 +7,8 @@ import type { BackupInfo } from '../hooks/useMarkers';
 
 interface Props {
   markers: MarkerData[];
-  onFlyTo: (lat: number, lng: number) => void;
+  selectedId: string | null;
+  onSelectMarker: (marker: MarkerData) => void;
   onImport: (markers: MarkerFormData[]) => Promise<{ added: number; skipped: number }>;
   onRemoveAll: () => Promise<void>;
   onCreateBackup: () => Promise<string | undefined>;
@@ -16,7 +17,7 @@ interface Props {
   onNavigateTo: (marker: MarkerData) => void;
 }
 
-export default function Sidebar({ markers, onFlyTo, onImport, onRemoveAll, onCreateBackup, onListBackups, onRestoreBackup, onNavigateTo }: Props) {
+export default function Sidebar({ markers, selectedId, onSelectMarker, onImport, onRemoveAll, onCreateBackup, onListBackups, onRestoreBackup, onNavigateTo }: Props) {
   const [showImport, setShowImport] = useState(false);
   const [showBackup, setShowBackup] = useState(false);
   const [search, setSearch] = useState('');
@@ -112,22 +113,26 @@ export default function Sidebar({ markers, onFlyTo, onImport, onRemoveAll, onCre
               {filtered.map((m) => (
                 <li
                   key={m.id}
-                  className="px-3 py-1.5 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center gap-2"
+                  className={`px-3 py-1.5 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 ${
+                    selectedId === m.id
+                      ? 'bg-blue-100 dark:bg-blue-900/40 border-l-4 border-l-blue-500'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                  }`}
                 >
                   <span
                     className="shrink-0 w-2.5 h-2.5 rounded-full cursor-pointer"
                     style={{ backgroundColor: m.color || '#ef4444' }}
-                    onClick={() => onFlyTo(m.lat, m.lng)}
+                    onClick={() => onSelectMarker(m)}
                   />
-                  <div className="min-w-0 flex-1 cursor-pointer" onClick={() => onFlyTo(m.lat, m.lng)}>
+                  <div className="min-w-0 flex-1 cursor-pointer" onClick={() => onSelectMarker(m)}>
                     <p className="text-sm text-gray-800 dark:text-white leading-tight truncate">{m.name} <span className="text-[10px] text-gray-400 dark:text-gray-500">{m.lat.toFixed(4)}, {m.lng.toFixed(4)}</span></p>
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); onNavigateTo(m); }}
-                    className="shrink-0 p-1 rounded text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                    className="shrink-0 p-1.5 rounded text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                     title="Nawiguj"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>

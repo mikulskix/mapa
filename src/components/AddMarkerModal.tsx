@@ -11,7 +11,7 @@ interface Props {
 export default function AddMarkerModal({ lat, lng, onConfirm, onCancel }: Props) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [color, setColor] = useState(MARKER_COLORS[0].value);
+  const [color, setColor] = useState<string>(MARKER_COLORS[0].value);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
