@@ -9,7 +9,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { generateSalt, deriveKey } from '../lib/crypto';
 
-export type UserStatus = 'pending' | 'approved' | null;
+export type UserStatus = 'pending' | 'approved' | 'rejected' | null;
 
 interface AuthContextType {
   user: User | null;

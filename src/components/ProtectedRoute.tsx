@@ -16,7 +16,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     return <Navigate to="/login" replace />;
   }
 
-  if (userStatus === 'pending') {
+  if (userStatus === 'pending' || userStatus === 'rejected') {
     return <Navigate to="/pending" replace />;
   }
 

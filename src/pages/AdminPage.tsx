@@ -56,6 +56,12 @@ export default function AdminPage() {
     setUsers((prev) => prev.map((u) => u.uid === uid ? { ...u, status: 'pending' } : u));
   }
 
+  async function handleReject(uid: string) {
+    await updateDoc(doc(db, 'registrations', uid), { status: 'rejected' });
+    await updateDoc(doc(db, 'users', uid, 'profile', 'main'), { status: 'rejected' });
+    setUsers((prev) => prev.map((u) => u.uid === uid ? { ...u, status: 'rejected' } : u));
+  }
+
   if (!isAdmin) return <Navigate to="/" replace />;
 
   return (
@@ -89,27 +95,44 @@ export default function AdminPage() {
                   <p className="font-medium text-sm dark:text-white">{u.email}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {new Date(u.createdAt).toLocaleDateString('pl-PL')} &middot;{' '}
-                    <span className={u.status === 'approved' ? 'text-green-600' : 'text-amber-600'}>
-                      {u.status === 'approved' ? 'Zatwierdzony' : 'Oczekujący'}
+                    <span className={
+                      u.status === 'approved' ? 'text-green-600'
+                      : u.status === 'rejected' ? 'text-red-600'
+                      : 'text-amber-600'
+                    }>
+                      {u.status === 'approved' ? 'Zatwierdzony'
+                        : u.status === 'rejected' ? 'Odrzucony'
+                        : 'Oczekujący'}
                     </span>
                   </p>
                 </div>
 
-                {u.status === 'pending' ? (
-                  <button
-                    onClick={() => handleApprove(u.uid)}
-                    className="px-3 py-1.5 text-sm rounded-md bg-green-600 text-white hover:bg-green-700"
-                  >
-                    Zatwierdź
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleRevoke(u.uid)}
-                    className="px-3 py-1.5 text-sm rounded-md bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50"
-                  >
-                    Cofnij
-                  </button>
-                )}
+                <div className="flex gap-2 shrink-0">
+                  {u.status !== 'approved' && (
+                    <button
+                      onClick={() => handleApprove(u.uid)}
+                      className="px-3 py-1.5 text-sm rounded-md bg-green-600 text-white hover:bg-green-700"
+                    >
+                      Zatwierdź
+                    </button>
+                  )}
+                  {u.status === 'pending' && (
+                    <button
+                      onClick={() => handleReject(u.uid)}
+                      className="px-3 py-1.5 text-sm rounded-md bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                    >
+                      Odrzuć
+                    </button>
+                  )}
+                  {u.status === 'approved' && (
+                    <button
+                      onClick={() => handleRevoke(u.uid)}
+                      className="px-3 py-1.5 text-sm rounded-md bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50"
+                    >
+                      Cofnij
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
