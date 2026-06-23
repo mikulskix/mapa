@@ -28,10 +28,14 @@ export function parseCsv(file: File): Promise<{ valid: MarkerFormData[]; invalid
             continue;
           }
 
+          // Default to blue; also treat the legacy red default as "no color"
+          const csvColor = row.color?.trim().toLowerCase();
+          const color = (!csvColor || csvColor === '#ef4444') ? '#3b82f6' : csvColor;
+
           valid.push({
             name,
             description: row.description?.trim() || '',
-            color: row.color?.trim() || '#3b82f6',
+            color,
             lat,
             lng,
           });
