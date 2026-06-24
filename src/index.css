@@ -29,9 +29,9 @@ html, body, #root {
   display: none !important;
 }
 
-/* Push the zoom control below the navigation bar + compass while navigating */
+/* Push the zoom control below the navigation bar while navigating */
 .nav-active .leaflet-top.leaflet-left .leaflet-control {
-  margin-top: 124px;
+  margin-top: 72px;
   transition: margin-top 0.2s ease;
 }
 

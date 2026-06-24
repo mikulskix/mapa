@@ -296,22 +296,20 @@ export default function MapPage() {
           {/* Navigation bar (top) */}
           {navigateTo && (
             <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[1000] w-[92%] max-w-sm bg-blue-600 text-white pl-3 pr-2 py-2 rounded-lg shadow-lg flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-baseline gap-2 min-w-0">
+                <svg className="w-5 h-5 shrink-0 self-center" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <div className="min-w-0 leading-tight">
-                  <p className="text-sm font-medium truncate">{navigateTo.name}</p>
-                  {userPosition && (
-                    <p className="text-xs opacity-80">
-                      {formatDistance(
-                        L.latLng(userPosition[0], userPosition[1])
-                          .distanceTo(L.latLng(navigateTo.lat, navigateTo.lng))
-                      )}
-                    </p>
-                  )}
-                </div>
+                <p className="text-sm font-medium truncate min-w-0">{navigateTo.name}</p>
+                {userPosition && (
+                  <span className="text-2xl font-bold leading-none shrink-0">
+                    {formatDistance(
+                      L.latLng(userPosition[0], userPosition[1])
+                        .distanceTo(L.latLng(navigateTo.lat, navigateTo.lng))
+                    )}
+                  </span>
+                )}
               </div>
               <button
                 onClick={handleStopNavigation}
@@ -324,7 +322,7 @@ export default function MapPage() {
 
           {/* Compass (phone magnetometer) while navigating */}
           {navigateTo && (
-            <div className="fixed top-28 left-3 z-[1000]">
+            <div className="fixed top-32 right-3 z-[1000]">
               <Compass />
             </div>
           )}
