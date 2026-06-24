@@ -5,6 +5,7 @@ import MapComponent, { type MapMode } from '../components/Map';
 import Sidebar from '../components/Sidebar';
 import AddMarkerModal from '../components/AddMarkerModal';
 import WorkspaceUnlock from '../components/WorkspaceUnlock';
+import Compass from '../components/Compass';
 import { useMarkers } from '../hooks/useMarkers';
 import { useAuth } from '../context/AuthContext';
 import { formatDistance } from '../lib/geo';
@@ -318,6 +319,13 @@ export default function MapPage() {
               >
                 Zakończ
               </button>
+            </div>
+          )}
+
+          {/* Compass (phone magnetometer) while navigating */}
+          {navigateTo && (
+            <div className="fixed top-28 left-3 z-[1000]">
+              <Compass />
             </div>
           )}
 
