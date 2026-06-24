@@ -65,7 +65,6 @@ export default function Compass() {
           <polygon points="15,3 19,15 15,12 11,15" fill="#dc2626" />
           <polygon points="15,27 19,15 15,18 11,15" fill="#9ca3af" />
           <circle cx="15" cy="15" r="1.6" fill="#374151" />
-          <text x="15" y="9" text-anchor="middle" font-size="6" font-weight="bold" fill="#dc2626">N</text>
         </svg>
       </div>
       {needsPermission && (
