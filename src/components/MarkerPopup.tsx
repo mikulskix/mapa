@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useMap } from 'react-leaflet';
 import type { MarkerData, MarkerFormData } from '../lib/types';
 import { MARKER_COLORS } from '../lib/types';
 
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function MarkerPopup({ marker, onUpdate, onDelete, onNavigate }: Props) {
+  const map = useMap();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(marker.name);
   const [description, setDescription] = useState(marker.description);
@@ -94,7 +96,7 @@ export default function MarkerPopup({ marker, onUpdate, onDelete, onNavigate }: 
       </p>
       <div className="flex gap-1 mt-2 flex-wrap">
         <button
-          onClick={() => onNavigate(marker)}
+          onClick={() => { map.closePopup(); onNavigate(marker); }}
           className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
         >
           Nawiguj
