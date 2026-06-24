@@ -231,7 +231,7 @@ export default function Map({
     <MapContainer
       center={saved.center}
       zoom={saved.zoom}
-      className="h-full w-full"
+      className={`h-full w-full ${navigateTo ? 'nav-active' : ''}`}
     >
       <TileLayer
         key={satellite ? 'sat' : 'osm'}
