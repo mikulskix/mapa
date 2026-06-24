@@ -21,12 +21,13 @@ export default function MapPage() {
 
   // GPS
   const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
+  const [userHeading, setUserHeading] = useState<number | null>(null);
   const [gpsTracking, setGpsTracking] = useState(false);
   const watchIdRef = useRef<number | null>(null);
 
   // Navigation
   const [navigateTo, setNavigateTo] = useState<MarkerData | null>(null);
-  const [fitBounds, setFitBounds] = useState<[[number, number], [number, number]] | null>(null);
+  const [following, setFollowing] = useState(false);
 
   // Selected marker (highlight from list)
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -38,9 +39,14 @@ export default function MapPage() {
   useEffect(() => {
     if (gpsTracking) {
       watchIdRef.current = navigator.geolocation.watchPosition(
-        (pos) => setUserPosition([pos.coords.latitude, pos.coords.longitude]),
+        (pos) => {
+          setUserPosition([pos.coords.latitude, pos.coords.longitude]);
+          if (pos.coords.heading != null && !isNaN(pos.coords.heading)) {
+            setUserHeading(pos.coords.heading);
+          }
+        },
         () => { },
-        { enableHighAccuracy: true, maximumAge: 5000 }
+        { enableHighAccuracy: true, maximumAge: 2000 }
       );
     } else {
       if (watchIdRef.current !== null) {
@@ -93,23 +99,14 @@ export default function MapPage() {
 
   const handleNavigateTo = useCallback((marker: MarkerData) => {
     setSidebarOpen(false);
-    const startNav = (pos: [number, number]) => {
-      setNavigateTo(marker);
-      setFitBounds([pos, [marker.lat, marker.lng]]);
-      setTimeout(() => setFitBounds(null), 1000);
-    };
+    setNavigateTo(marker);
+    setFollowing(true);
     if (!userPosition) {
       setGpsTracking(true);
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const p: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-          setUserPosition(p);
-          startNav(p);
-        },
+        (pos) => setUserPosition([pos.coords.latitude, pos.coords.longitude]),
         () => alert('Włącz lokalizację aby nawigować')
       );
-    } else {
-      startNav(userPosition);
     }
   }, [userPosition]);
 
@@ -122,6 +119,11 @@ export default function MapPage() {
 
   function handleStopNavigation() {
     setNavigateTo(null);
+    setFollowing(false);
+  }
+
+  function handleRecenter() {
+    setFollowing(true);
   }
 
   function handleToggleMeasure() {
@@ -132,6 +134,7 @@ export default function MapPage() {
       setMode('measure');
       setMeasurePoints([]);
       setNavigateTo(null);
+      setFollowing(false);
     }
   }
 
@@ -192,14 +195,16 @@ export default function MapPage() {
             markers={markers}
             mode={mode}
             userPosition={userPosition}
+            userHeading={userHeading}
             navigateTo={navigateTo}
             measurePoints={measurePoints}
             selectedId={selectedId}
-            fitBounds={fitBounds}
+            following={following}
             onMapClick={handleMapClick}
             onUpdateMarker={updateMarker}
             onDeleteMarker={removeMarker}
             onNavigateTo={handleNavigateTo}
+            onUserPan={() => setFollowing(false)}
             flyTo={flyTo}
           />
 
@@ -314,6 +319,20 @@ export default function MapPage() {
                 Zakończ
               </button>
             </div>
+          )}
+
+          {/* Recenter button (when navigating but the map was panned) */}
+          {navigateTo && !following && (
+            <button
+              onClick={handleRecenter}
+              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 px-4 py-2 rounded-full shadow-lg border border-gray-200 dark:border-gray-600 text-sm font-medium"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v2m0 16v2m10-10h-2M4 12H2" />
+              </svg>
+              Wyśrodkuj
+            </button>
           )}
         </main>
 

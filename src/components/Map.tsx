@@ -36,6 +36,19 @@ const userLocationIcon = L.divIcon({
   iconAnchor: [20, 20],
 });
 
+function createHeadingIcon(heading: number) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="transform: rotate(${heading}deg);">
+      <svg viewBox="0 0 24 24" width="36" height="36">
+        <path d="M12 2 L19 21 L12 16.5 L5 21 Z" fill="#2563eb" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+    </div>`,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+  });
+}
+
 export type MapMode = 'default' | 'add' | 'measure';
 
 interface Props {
@@ -43,14 +56,16 @@ interface Props {
   markers: MarkerData[];
   mode: MapMode;
   userPosition: [number, number] | null;
+  userHeading: number | null;
   navigateTo: MarkerData | null;
   measurePoints: [number, number][];
   selectedId: string | null;
-  fitBounds: [[number, number], [number, number]] | null;
+  following: boolean;
   onMapClick: (lat: number, lng: number) => void;
   onUpdateMarker: (id: string, data: MarkerFormData) => void;
   onDeleteMarker: (id: string) => void;
   onNavigateTo: (marker: MarkerData) => void;
+  onUserPan: () => void;
   flyTo: { lat: number; lng: number } | null;
 }
 
@@ -112,13 +127,31 @@ function FlyToHandler({ flyTo }: { flyTo: { lat: number; lng: number } | null })
   return null;
 }
 
-function FitBoundsHandler({ bounds }: { bounds: [[number, number], [number, number]] | null }) {
+function NavigationFollow({ navigateTo, userPosition, following, onUserPan }: {
+  navigateTo: MarkerData | null;
+  userPosition: [number, number] | null;
+  following: boolean;
+  onUserPan: () => void;
+}) {
   const map = useMap();
+
+  // Detect a manual pan so we can stop auto-centering and show "Wyśrodkuj".
+  useMapEvents({
+    dragstart() {
+      if (navigateTo && following) onUserPan();
+    },
+  });
+
+  // Keep the whole route fitted to the screen while following.
   useEffect(() => {
-    if (bounds) {
-      map.flyToBounds(bounds, { padding: [70, 70], maxZoom: 16, duration: 0.8 });
+    if (navigateTo && following && userPosition) {
+      map.fitBounds(
+        [userPosition, [navigateTo.lat, navigateTo.lng]],
+        { padding: [70, 70], maxZoom: 17 }
+      );
     }
-  }, [bounds, map]);
+  }, [navigateTo, following, userPosition, map]);
+
   return null;
 }
 
@@ -157,7 +190,7 @@ function NavigationLine({ from, to }: { from: [number, number]; to: MarkerData }
     <>
       <Polyline
         positions={[from, [to.lat, to.lng]]}
-        pathOptions={{ color: '#ff6d00', weight: 5, dashArray: '1, 12', lineCap: 'round' }}
+        pathOptions={{ color: '#dc2626', weight: 4, dashArray: '12, 9' }}
       />
       <CircleMarker center={[midLat, midLng]} radius={0}>
         <Tooltip direction="center" permanent className="distance-label">
@@ -223,10 +256,14 @@ function getSavedView(): { center: [number, number]; zoom: number } {
 }
 
 export default function Map({
-  satellite, markers, mode, userPosition, navigateTo, measurePoints, selectedId, fitBounds,
-  onMapClick, onUpdateMarker, onDeleteMarker, onNavigateTo, flyTo,
+  satellite, markers, mode, userPosition, userHeading, navigateTo, measurePoints, selectedId, following,
+  onMapClick, onUpdateMarker, onDeleteMarker, onNavigateTo, onUserPan, flyTo,
 }: Props) {
   const saved = getSavedView();
+  const userIcon = useMemo(
+    () => (navigateTo && userHeading != null ? createHeadingIcon(userHeading) : userLocationIcon),
+    [navigateTo, userHeading]
+  );
   return (
     <MapContainer
       center={saved.center}
@@ -242,10 +279,15 @@ export default function Map({
       <ZoomLabelScaler />
       <ClickHandler mode={mode} onMapClick={onMapClick} />
       <FlyToHandler flyTo={flyTo} />
-      <FitBoundsHandler bounds={fitBounds} />
+      <NavigationFollow
+        navigateTo={navigateTo}
+        userPosition={userPosition}
+        following={following}
+        onUserPan={onUserPan}
+      />
 
       {userPosition && (
-        <Marker position={userPosition} icon={userLocationIcon}>
+        <Marker position={userPosition} icon={userIcon}>
           <Tooltip direction="top" offset={[0, -12]} className="marker-label">
             Twoja pozycja
           </Tooltip>
