@@ -10,22 +10,24 @@ const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenS
 const SAT_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 const SAT_ATTR = '&copy; Esri';
 
-function createDotIcon(color: string, selected = false) {
-  if (selected) {
-    return L.divIcon({
-      className: '',
-      html: `<div class="marker-selected"><div style="width:18px;height:18px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 0 0 3px #3b82f6,0 1px 6px rgba(0,0,0,0.5);"></div></div>`,
-      iconSize: [18, 18],
-      iconAnchor: [9, 9],
-      popupAnchor: [0, -12],
-    });
-  }
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string)
+  );
+}
+
+function createDotIcon(color: string, name: string, selected = false) {
+  const size = selected ? 18 : 14;
+  const a = size / 2;
+  const dot = selected
+    ? `<div class="marker-bounce" style="width:18px;height:18px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 0 0 3px #3b82f6,0 1px 6px rgba(0,0,0,0.5);"></div>`
+    : `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`;
   return L.divIcon({
     className: '',
-    html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-    popupAnchor: [0, -10],
+    html: `<div class="marker-pin">${dot}<div class="marker-name">${escapeHtml(name)}</div></div>`,
+    iconSize: [size, size],
+    iconAnchor: [a, a],
+    popupAnchor: [0, -a - 4],
   });
 }
 
@@ -162,18 +164,10 @@ function ColorMarker({ marker, selected, onUpdate, onDelete, onNavigate }: {
   onDelete: (id: string) => void;
   onNavigate: (marker: MarkerData) => void;
 }) {
-  const icon = useMemo(() => createDotIcon(marker.color || '#ef4444', selected), [marker.color, selected]);
+  const icon = useMemo(() => createDotIcon(marker.color || '#ef4444', marker.name, selected), [marker.color, marker.name, selected]);
 
   return (
     <Marker position={[marker.lat, marker.lng]} icon={icon}>
-      <Tooltip
-        direction="top"
-        offset={[0, -10]}
-        permanent
-        className="marker-label"
-      >
-        {marker.name}
-      </Tooltip>
       <Popup>
         <MarkerPopup marker={marker} onUpdate={onUpdate} onDelete={onDelete} onNavigate={onNavigate} />
       </Popup>

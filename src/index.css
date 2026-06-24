@@ -29,15 +29,40 @@ html, body, #root {
   display: none !important;
 }
 
+/* Marker name embedded in the icon so the whole label is tappable */
+.marker-pin {
+  position: relative;
+}
+
+.marker-name {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  color: #000000;
+  font-weight: 500;
+  font-size: var(--marker-label-size, 12px);
+  line-height: 1;
+  padding: 4px 6px;
+  cursor: pointer;
+  pointer-events: auto;
+  text-shadow:
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    1px 1px 0 #fff;
+}
+
 /* Push the zoom control below the navigation bar while navigating */
 .nav-active .leaflet-top.leaflet-left .leaflet-control {
   margin-top: 72px;
   transition: margin-top 0.2s ease;
 }
 
-.marker-selected {
+.marker-bounce {
   animation: marker-bounce 1.2s ease-in-out infinite;
-  transform-origin: center bottom;
+  transform-origin: center;
 }
 
 @keyframes marker-bounce {
