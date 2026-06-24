@@ -7,10 +7,9 @@ import ChangePassphraseModal from './ChangePassphraseModal';
 interface Props {
   satellite: boolean;
   onToggleLayer: () => void;
-  onToggleSidebar: () => void;
 }
 
-export default function Header({ satellite, onToggleLayer, onToggleSidebar }: Props) {
+export default function Header({ satellite, onToggleLayer }: Props) {
   const { logout, user, isAdmin } = useAuth();
   const { dark, toggle } = useDarkMode();
   const [showChangePass, setShowChangePass] = useState(false);
@@ -18,15 +17,6 @@ export default function Header({ satellite, onToggleLayer, onToggleSidebar }: Pr
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex items-center justify-between z-50 shrink-0">
       <div className="flex items-center gap-2">
-        <button
-          onClick={onToggleSidebar}
-          className="md:hidden p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
-          aria-label="Menu"
-        >
-          <svg className="w-5 h-5 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
         <svg className="w-6 h-6 text-blue-600 dark:text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
         </svg>

@@ -163,7 +163,6 @@ export default function MapPage() {
       <Header
         satellite={satellite}
         onToggleLayer={() => setSatellite((s) => !s)}
-        onToggleSidebar={() => setSidebarOpen((s) => !s)}
       />
 
       <div className="flex flex-1 overflow-hidden relative">
@@ -269,7 +268,7 @@ export default function MapPage() {
 
           {/* Mode indicators */}
           {mode === 'add' && (
-            <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[1000] bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium">
+            <div className={`fixed ${navigateTo ? 'top-28' : 'top-16'} left-1/2 -translate-x-1/2 z-[1000] bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium`}>
               Kliknij na mapę aby dodać pinezkę
             </div>
           )}
@@ -288,23 +287,29 @@ export default function MapPage() {
             </div>
           )}
 
-          {/* Navigation bar */}
+          {/* Navigation bar (top) */}
           {navigateTo && (
-            <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[1000] bg-blue-600 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-4">
-              <div>
-                <p className="text-sm font-medium">Nawigacja do: {navigateTo.name}</p>
-                {userPosition && (
-                  <p className="text-xs opacity-80">
-                    {formatDistance(
-                      L.latLng(userPosition[0], userPosition[1])
-                        .distanceTo(L.latLng(navigateTo.lat, navigateTo.lng))
-                    )}
-                  </p>
-                )}
+            <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[1000] w-[92%] max-w-sm bg-blue-600 text-white pl-3 pr-2 py-2 rounded-lg shadow-lg flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <div className="min-w-0 leading-tight">
+                  <p className="text-sm font-medium truncate">{navigateTo.name}</p>
+                  {userPosition && (
+                    <p className="text-xs opacity-80">
+                      {formatDistance(
+                        L.latLng(userPosition[0], userPosition[1])
+                          .distanceTo(L.latLng(navigateTo.lat, navigateTo.lng))
+                      )}
+                    </p>
+                  )}
+                </div>
               </div>
               <button
                 onClick={handleStopNavigation}
-                className="px-3 py-1 bg-white/20 rounded-md text-sm hover:bg-white/30"
+                className="shrink-0 px-2.5 py-1 bg-white/20 rounded-md text-xs hover:bg-white/30"
               >
                 Zakończ
               </button>
