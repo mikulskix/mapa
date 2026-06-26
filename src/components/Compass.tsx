@@ -55,12 +55,12 @@ export default function Compass() {
   return (
     <button
       onClick={needsPermission ? requestPerm : undefined}
-      className="relative w-11 h-11 rounded-full bg-white dark:bg-gray-700 shadow-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center"
+      className="relative w-[88px] h-[88px] rounded-full bg-white dark:bg-gray-700 shadow-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center"
       title={needsPermission ? 'Dotknij, aby włączyć kompas' : 'Kompas'}
       aria-label="Kompas"
     >
       <div style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 0.15s ease-out' }}>
-        <svg width="30" height="30" viewBox="0 0 30 30">
+        <svg width="60" height="60" viewBox="0 0 30 30">
           {/* North needle (red) + South needle (grey) */}
           <polygon points="15,3 19,15 15,12 11,15" fill="#dc2626" />
           <polygon points="15,27 19,15 15,18 11,15" fill="#9ca3af" />
