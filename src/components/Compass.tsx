@@ -70,8 +70,8 @@ export default function Compass({ movementHeading }: Props) {
       title={needsPermission ? 'Dotknij, aby włączyć kompas' : 'Kompas'}
       aria-label="Kompas"
     >
-      {/* Compass rose — rotates with device orientation */}
-      <div style={{ transform: `rotate(${compassRotation}deg)`, transition: 'transform 0.15s ease-out', position: 'absolute' }}>
+      {/* Compass rose — rotates with device orientation, rendered above movement arrow */}
+      <div style={{ transform: `rotate(${compassRotation}deg)`, transition: 'transform 0.15s ease-out', position: 'absolute', zIndex: 1 }}>
         <svg width="60" height="60" viewBox="0 0 30 30">
           <polygon points="15,3 19,15 15,12 11,15" fill="#dc2626" />
           <polygon points="15,27 19,15 15,18 11,15" fill="#9ca3af" />
@@ -79,11 +79,11 @@ export default function Compass({ movementHeading }: Props) {
         </svg>
       </div>
 
-      {/* Movement arrow — blue, thin, points in direction of travel */}
+      {/* Movement arrow — blue, thin, longer, rendered below the compass needle (z-order via order in DOM) */}
       {movementRotation != null && (
-        <div style={{ transform: `rotate(${movementRotation}deg)`, transition: 'transform 0.2s ease-out', position: 'absolute' }}>
+        <div style={{ transform: `rotate(${movementRotation}deg)`, transition: 'transform 0.2s ease-out', position: 'absolute', zIndex: 0 }}>
           <svg width="60" height="60" viewBox="0 0 30 30">
-            <polygon points="15,5 17.5,21 15,19 12.5,21" fill="#2563eb" stroke="white" strokeWidth="0.6" strokeLinejoin="round" />
+            <polygon points="15,2 16.2,20 15,18.5 13.8,20" fill="#2563eb" stroke="white" strokeWidth="0.4" strokeLinejoin="round" />
           </svg>
         </div>
       )}
