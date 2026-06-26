@@ -323,7 +323,7 @@ export default function MapPage() {
           {/* Compass (phone magnetometer) while navigating */}
           {navigateTo && (
             <div className="fixed top-32 right-3 z-[1000]">
-              <Compass />
+              <Compass movementHeading={userHeading} />
             </div>
           )}
 
