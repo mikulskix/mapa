@@ -55,7 +55,8 @@ export default function Compass() {
   return (
     <button
       onClick={needsPermission ? requestPerm : undefined}
-      className="relative w-[88px] h-[88px] rounded-full bg-white dark:bg-gray-700 shadow-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center"
+      className="relative w-[88px] h-[88px] rounded-full shadow-lg flex items-center justify-center"
+      style={{ background: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.4)' }}
       title={needsPermission ? 'Dotknij, aby włączyć kompas' : 'Kompas'}
       aria-label="Kompas"
     >
