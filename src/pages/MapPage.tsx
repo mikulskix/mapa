@@ -280,8 +280,8 @@ export default function MapPage() {
 
           {/* Mode indicators */}
           {mode === 'add' && (
-            <div className={`fixed ${navigateTo ? 'top-28' : 'top-16'} left-1/2 -translate-x-1/2 z-[1000] bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium flex items-center gap-3`}>
-              <span>Kliknij na mapę aby dodać pinezkę</span>
+            <div className={`fixed ${navigateTo ? 'top-28' : 'top-16'} left-1/2 -translate-x-1/2 z-[1000] max-w-[92vw] bg-blue-600 text-white px-4 py-2 rounded-2xl sm:rounded-full shadow-lg text-sm font-medium flex flex-col sm:flex-row items-center gap-2 sm:gap-3`}>
+              <span className="whitespace-nowrap">Kliknij na mapę aby dodać pinezkę</span>
               <button
                 onClick={() => {
                   setAddInitial(null);
