@@ -6,3 +6,9 @@ dist-ssr
 .DS_Store
 .env
 .env.local
+
+# Lokalna konfiguracja narzędzi (podgląd itp.)
+.claude/
+
+# Eksporty/importy pinezek — mogą zawierać wrażliwe dane
+markers-*.csv
