@@ -18,7 +18,9 @@ export default function MapPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [flyTo, setFlyTo] = useState<{ lat: number; lng: number } | null>(null);
   const [mode, setMode] = useState<MapMode>('default');
-  const [pendingPoint, setPendingPoint] = useState<{ lat: number; lng: number } | null>(null);
+  // Modal dodawania: otwarty + współrzędne początkowe (null = tryb ręcznego wpisywania)
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [addInitial, setAddInitial] = useState<{ lat: number; lng: number } | null>(null);
 
   // GPS
   const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
@@ -82,7 +84,8 @@ export default function MapPage() {
 
   const handleMapClick = useCallback((lat: number, lng: number) => {
     if (mode === 'add') {
-      setPendingPoint({ lat, lng });
+      setAddInitial({ lat, lng });
+      setAddModalOpen(true);
       setMode('default');
     } else if (mode === 'measure') {
       setMeasurePoints((prev) => [...prev, [lat, lng]]);
@@ -90,12 +93,15 @@ export default function MapPage() {
   }, [mode]);
 
   const handleConfirmAdd = useCallback(
-    (name: string, description: string, color: string) => {
-      if (!pendingPoint) return;
-      addMarker({ name, description, color, lat: pendingPoint.lat, lng: pendingPoint.lng });
-      setPendingPoint(null);
+    (name: string, description: string, color: string, lat: number, lng: number) => {
+      addMarker({ name, description, color, lat, lng });
+      setAddModalOpen(false);
+      setAddInitial(null);
+      // Przeleć do nowo dodanego punktu (przydatne przy wpisywaniu współrzędnych)
+      setFlyTo({ lat, lng });
+      setTimeout(() => setFlyTo(null), 1000);
     },
-    [addMarker, pendingPoint]
+    [addMarker]
   );
 
   const handleNavigateTo = useCallback((marker: MarkerData) => {
@@ -274,8 +280,18 @@ export default function MapPage() {
 
           {/* Mode indicators */}
           {mode === 'add' && (
-            <div className={`fixed ${navigateTo ? 'top-28' : 'top-16'} left-1/2 -translate-x-1/2 z-[1000] bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium`}>
-              Kliknij na mapę aby dodać pinezkę
+            <div className={`fixed ${navigateTo ? 'top-28' : 'top-16'} left-1/2 -translate-x-1/2 z-[1000] bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium flex items-center gap-3`}>
+              <span>Kliknij na mapę aby dodać pinezkę</span>
+              <button
+                onClick={() => {
+                  setAddInitial(null);
+                  setAddModalOpen(true);
+                  setMode('default');
+                }}
+                className="px-2 py-0.5 bg-white/20 rounded text-xs hover:bg-white/30 whitespace-nowrap"
+              >
+                Wpisz współrzędne
+              </button>
             </div>
           )}
 
@@ -356,12 +372,15 @@ export default function MapPage() {
       </div>
 
       {/* Add marker modal */}
-      {pendingPoint && (
+      {addModalOpen && (
         <AddMarkerModal
-          lat={pendingPoint.lat}
-          lng={pendingPoint.lng}
+          lat={addInitial?.lat ?? null}
+          lng={addInitial?.lng ?? null}
           onConfirm={handleConfirmAdd}
-          onCancel={() => setPendingPoint(null)}
+          onCancel={() => {
+            setAddModalOpen(false);
+            setAddInitial(null);
+          }}
         />
       )}
     </div>

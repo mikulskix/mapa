@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { MARKER_COLORS } from '../lib/types';
+import { parseCoords } from '../lib/geo';
 
 interface Props {
-  lat: number;
-  lng: number;
-  onConfirm: (name: string, description: string, color: string) => void;
+  // Współrzędne początkowe (np. z kliknięcia w mapę). Gdy null — tryb ręcznego wpisywania.
+  lat: number | null;
+  lng: number | null;
+  onConfirm: (name: string, description: string, color: string, lat: number, lng: number) => void;
   onCancel: () => void;
 }
 
@@ -12,22 +14,49 @@ export default function AddMarkerModal({ lat, lng, onConfirm, onCancel }: Props)
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState<string>(MARKER_COLORS[0].value);
+  // Pole współrzędnych: wypełnione gdy klik w mapę, puste w trybie ręcznym
+  const [coordsText, setCoordsText] = useState(
+    lat != null && lng != null ? `${lat.toFixed(6)}, ${lng.toFixed(6)}` : ''
+  );
+
+  const coords = parseCoords(coordsText);
+  const coordsInvalid = coordsText.trim() !== '' && coords === null;
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return;
-    onConfirm(name.trim(), description.trim(), color);
+    if (!name.trim() || !coords) return;
+    onConfirm(name.trim(), description.trim(), color, coords.lat, coords.lng);
   }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1100] p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm">
-        <h2 className="text-lg font-bold mb-1 dark:text-white">Nowa pinezka</h2>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-          {lat.toFixed(5)}, {lng.toFixed(5)}
-        </p>
+        <h2 className="text-lg font-bold mb-4 dark:text-white">Nowa pinezka</h2>
 
         <form onSubmit={handleSubmit} className="space-y-3">
+          {/* Współrzędne — edytowalne, można wkleić z Google Maps */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Współrzędne
+            </label>
+            <input
+              value={coordsText}
+              onChange={(e) => setCoordsText(e.target.value)}
+              placeholder="50.926257, 14.975718"
+              inputMode="decimal"
+              className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 ${
+                coordsInvalid
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
+              }`}
+            />
+            {coordsInvalid && (
+              <p className="text-xs text-red-500 mt-1">
+                Podaj współrzędne w formacie: szerokość, długość (np. 50.926257, 14.975718)
+              </p>
+            )}
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Nazwa
@@ -82,7 +111,7 @@ export default function AddMarkerModal({ lat, lng, onConfirm, onCancel }: Props)
             </button>
             <button
               type="submit"
-              disabled={!name.trim()}
+              disabled={!name.trim() || !coords}
               className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
             >
               Dodaj
