@@ -41,5 +41,11 @@ service cloud.firestore {
     match /backups/{id} {
       allow read, write: if isApproved();
     }
+
+    // Kategorie kolorów — zatwierdzone osoby mogą czytać, tylko admin może zapisywać.
+    match /categories/{document=**} {
+      allow read: if isApproved();
+      allow write: if isAdmin();
+    }
   }
 }

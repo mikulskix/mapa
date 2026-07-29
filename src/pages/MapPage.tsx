@@ -7,6 +7,7 @@ import AddMarkerModal from '../components/AddMarkerModal';
 import WorkspaceUnlock from '../components/WorkspaceUnlock';
 import Compass from '../components/Compass';
 import { useMarkers } from '../hooks/useMarkers';
+import { useCategories } from '../hooks/useCategories';
 import { useAuth } from '../context/AuthContext';
 import { formatDistance } from '../lib/geo';
 import type { MarkerData, MarkerFormData } from '../lib/types';
@@ -14,6 +15,10 @@ import type { MarkerData, MarkerFormData } from '../lib/types';
 export default function MapPage() {
   const { workspaceKey, isAdmin } = useAuth();
   const { markers, loading, addMarker, updateMarker, removeMarker, removeAllMarkers, importMarkers, createBackup, listBackups, restoreBackup } = useMarkers();
+  // Kategorie kolorów (kolor → nazwa) — ładowane z Firestore
+  const { categories } = useCategories();
+  // Zestaw kolorów aktualnie ukrytych przez użytkownika (filtr)
+  const [hiddenColors, setHiddenColors] = useState<Set<string>>(new Set());
   const [satellite, setSatellite] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [flyTo, setFlyTo] = useState<{ lat: number; lng: number } | null>(null);
@@ -37,6 +42,22 @@ export default function MapPage() {
 
   // Measure
   const [measurePoints, setMeasurePoints] = useState<[number, number][]>([]);
+
+  // Pinezki widoczne na mapie i w sidebarze (po filtrze kolorów)
+  const visibleMarkers = markers.filter((m) => !hiddenColors.has(m.color));
+
+  // Przełącza widoczność pinezek danego koloru
+  const handleToggleColor = useCallback((color: string) => {
+    setHiddenColors((prev) => {
+      const next = new Set(prev);
+      if (next.has(color)) {
+        next.delete(color);
+      } else {
+        next.add(color);
+      }
+      return next;
+    });
+  }, []);
 
   // GPS tracking
   useEffect(() => {
@@ -178,7 +199,7 @@ export default function MapPage() {
       <div className="flex flex-1 overflow-hidden relative">
         {/* Desktop sidebar */}
         <aside className="hidden md:block w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0">
-          <Sidebar markers={markers} isAdmin={isAdmin} selectedId={selectedId} onSelectMarker={handleSelectMarker} onImport={handleImport} onRemoveAll={removeAllMarkers} onCreateBackup={createBackup} onListBackups={listBackups} onRestoreBackup={restoreBackup} onNavigateTo={handleNavigateTo} />
+          <Sidebar markers={markers} isAdmin={isAdmin} selectedId={selectedId} onSelectMarker={handleSelectMarker} onImport={handleImport} onRemoveAll={removeAllMarkers} onCreateBackup={createBackup} onListBackups={listBackups} onRestoreBackup={restoreBackup} onNavigateTo={handleNavigateTo} categories={categories} hiddenColors={hiddenColors} onToggleColor={handleToggleColor} />
         </aside>
 
         {/* Mobile sidebar overlay */}
@@ -190,7 +211,7 @@ export default function MapPage() {
             />
             <aside className="md:hidden fixed bottom-0 left-0 right-0 h-[60vh] bg-white dark:bg-gray-800 rounded-t-xl shadow-xl z-[1060] overflow-hidden">
               <div className="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mt-2 mb-1" />
-              <Sidebar markers={markers} isAdmin={isAdmin} selectedId={selectedId} onSelectMarker={handleSelectMarker} onImport={handleImport} onRemoveAll={removeAllMarkers} onCreateBackup={createBackup} onListBackups={listBackups} onRestoreBackup={restoreBackup} onNavigateTo={handleNavigateTo} />
+              <Sidebar markers={markers} isAdmin={isAdmin} selectedId={selectedId} onSelectMarker={handleSelectMarker} onImport={handleImport} onRemoveAll={removeAllMarkers} onCreateBackup={createBackup} onListBackups={listBackups} onRestoreBackup={restoreBackup} onNavigateTo={handleNavigateTo} categories={categories} hiddenColors={hiddenColors} onToggleColor={handleToggleColor} />
             </aside>
           </>
         )}
@@ -199,7 +220,7 @@ export default function MapPage() {
         <main className="flex-1 relative z-0">
           <MapComponent
             satellite={satellite}
-            markers={markers}
+            markers={visibleMarkers}
             mode={mode}
             userPosition={userPosition}
             userHeading={userHeading}
