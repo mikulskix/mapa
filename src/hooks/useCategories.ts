@@ -33,10 +33,16 @@ export function useCategories() {
   /**
    * Zapisuje całą mapę kategorii do Firestore.
    * Wywołuj z panelu admina po edycji.
+   *
+   * UWAGA: zapis BEZ merge — nadpisujemy całe pole "colors". Dzięki temu
+   * kategorie usunięte lokalnie faktycznie znikają. (Z merge:true klucze
+   * nieobecne w nowym obiekcie zostałyby w bazie i usuwanie by nie działało.)
+   * Dokument categories/config przechowuje wyłącznie pole "colors", więc
+   * nadpisanie całości jest bezpieczne.
    */
   const saveCategories = useCallback(async (newCategories: CategoryMap) => {
     const ref = doc(db, 'categories', 'config');
-    await setDoc(ref, { colors: newCategories }, { merge: true });
+    await setDoc(ref, { colors: newCategories });
   }, []);
 
   return { categories, loading, saveCategories };
