@@ -17,8 +17,14 @@ Prywatna aplikacja mapowa (współdzielona baza pinezek terenowych) z nawigacją
 
 ## Hosting i deploy
 - **GitHub Pages**, live: https://mikulskix.github.io/mapa/ (branch `gh-pages`, serwowany z `/mapa/` — stąd `base: '/mapa/'` w `vite.config.ts`).
-- **Auto-deploy**: push na `main` → workflow `.github/workflows/deploy.yml` (build + oficjalny Pages deploy przez OIDC). Zero ręcznego deployu.
+- **Auto-deploy KODU**: push na `main` → workflow `.github/workflows/deploy.yml` (build + oficjalny Pages deploy przez OIDC). Zero ręcznego deployu. Workflow odpala tylko `npm run build` (nie `npm run lint`), więc błędy lintu nie blokują deployu.
+- **Reguły Firestore deployuje się OSOBNO i RĘCZNIE** — Actions ich NIE dotyka. Po każdej zmianie `firestore.rules` wklej całość w konsoli: https://console.firebase.google.com/project/mapagithub/firestore/rules (zakładka Rules → zaznacz wszystko → wklej → Publish). Project ID: `mapagithub`. Bez tego nowy model danych będzie blokowany mimo udanego deployu strony.
 - Zmienne `VITE_*` do builda siedzą w **GitHub Secrets** (nie w repo). To publiczne identyfikatory Firebase/Turnstile — nie sekrety, i tak trafiają do bundla.
+
+### Push / uwierzytelnianie do GitHuba
+- `git push origin main` używa tokena zapisanego w **keychainie macOS** (`git credential-osxkeychain`). `gh` CLI bywał rozjechany (nieważny token w keyring, brak klucza SSH).
+- Gdy push odmawia auth (`Invalid username or token`): sprawdź `git config --get-all credential.https://github.com.helper` — jeśli wskazuje `!gh auth git-credential`, gh przechwytuje zły token; usuń ten wpis (`git config --global --unset-all credential.https://github.com.helper`), aby git korzystał z globalnego `osxkeychain`. Ewentualnie zapisz świeży token classic (scope `repo`) do keychaina.
+- Podgląd statusu Actions bez działającego `gh`: `curl -H "Authorization: Bearer $TOKEN" https://api.github.com/repos/mikulskix/mapa/actions/runs?per_page=1` (token z keychaina przez `git credential fill`).
 
 ## Architektura bezpieczeństwa (ważne!)
 - **Model współdzielonego workspace**: wszyscy zatwierdzeni użytkownicy widzą tę samą bazę pinezek. Dane pinezek są **szyfrowane po stronie klienta** (AES-GCM 256, klucz z PBKDF2 100k iteracji) — Firestore nigdy nie widzi jawnych danych. Zob. `src/lib/crypto.ts`.
