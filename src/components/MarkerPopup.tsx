@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMap } from 'react-leaflet';
 import type { MarkerData, MarkerFormData } from '../lib/types';
 import { MARKER_COLORS } from '../lib/types';
+import { parseCoords } from '../lib/geo';
 
 interface Props {
   marker: MarkerData;
@@ -16,15 +17,20 @@ export default function MarkerPopup({ marker, onUpdate, onDelete, onNavigate }: 
   const [name, setName] = useState(marker.name);
   const [description, setDescription] = useState(marker.description);
   const [color, setColor] = useState(marker.color || '#ef4444');
+  // Edytowalne współrzędne (format Google, np. "50.926257, 14.975718")
+  const [coordsText, setCoordsText] = useState(`${marker.lat.toFixed(6)}, ${marker.lng.toFixed(6)}`);
+
+  const coords = parseCoords(coordsText);
+  const coordsInvalid = coordsText.trim() !== '' && coords === null;
 
   function handleSave() {
-    if (!name.trim()) return;
+    if (!name.trim() || !coords) return;
     onUpdate(marker.id, {
       name: name.trim(),
       description: description.trim(),
       color,
-      lat: marker.lat,
-      lng: marker.lng,
+      lat: coords.lat,
+      lng: coords.lng,
     });
     setEditing(false);
   }
@@ -51,6 +57,19 @@ export default function MarkerPopup({ marker, onUpdate, onDelete, onNavigate }: 
           rows={2}
           className="w-full px-2 py-1 mb-2 border border-gray-300 rounded text-sm resize-none"
         />
+        {/* Współrzędne — edytowalne, format z Google Maps */}
+        <input
+          value={coordsText}
+          onChange={(e) => setCoordsText(e.target.value)}
+          placeholder="50.926257, 14.975718"
+          inputMode="decimal"
+          className={`w-full px-2 py-1 mb-1 border rounded text-sm ${
+            coordsInvalid ? 'border-red-500' : 'border-gray-300'
+          }`}
+        />
+        {coordsInvalid && (
+          <p className="text-xs text-red-500 mb-1">Błędne współrzędne (np. 50.926257, 14.975718)</p>
+        )}
         <div className="flex flex-wrap gap-1.5 mb-2">
           {MARKER_COLORS.map((c) => (
             <button
@@ -67,7 +86,8 @@ export default function MarkerPopup({ marker, onUpdate, onDelete, onNavigate }: 
         <div className="flex gap-1">
           <button
             onClick={handleSave}
-            className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+            disabled={!name.trim() || !coords}
+            className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
           >
             Zapisz
           </button>
