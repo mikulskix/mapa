@@ -168,7 +168,10 @@ function ColorMarker({ marker, selected, onUpdate, onDelete, onNavigate }: {
 
   return (
     <Marker position={[marker.lat, marker.lng]} icon={icon}>
-      <Popup>
+      {/* closeOnClick=false — bez tego na telefonie „ghost click" po tapnięciu
+          Edytuj trafiał w mapę i zamykał popup (React podmienia treść szybciej,
+          niż przeglądarka dostarczy opóźniony event click). */}
+      <Popup closeOnClick={false} keepInView>
         <MarkerPopup marker={marker} onUpdate={onUpdate} onDelete={onDelete} onNavigate={onNavigate} />
       </Popup>
     </Marker>
