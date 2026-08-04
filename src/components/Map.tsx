@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Tooltip, Polyline, useMapEvents, useMap, CircleMarker } from 'react-leaflet';
 import L from 'leaflet';
 import type { MarkerData, MarkerFormData } from '../lib/types';
@@ -101,11 +101,21 @@ function ZoomLabelScaler() {
   return null;
 }
 
-function ClickHandler({ mode, onMapClick }: { mode: MapMode; onMapClick: (lat: number, lng: number) => void }) {
+function ClickHandler({ mode, onMapClick, editingRef }: {
+  mode: MapMode;
+  onMapClick: (lat: number, lng: number) => void;
+  editingRef: React.RefObject<boolean>;
+}) {
   const map = useMapEvents({
     click(e) {
       if (mode === 'add' || mode === 'measure') {
         onMapClick(e.latlng.lat, e.latlng.lng);
+      }
+      // Klik w mapę zamyka popup (Leaflet ma to wyłączone, żeby na telefonie
+      // „ghost click" nie ubijał świeżo otwartego formularza edycji),
+      // ale w trakcie edycji popup zostaje otwarty.
+      if (!editingRef.current) {
+        map.closePopup();
       }
     },
   });
@@ -157,12 +167,13 @@ function NavigationFollow({ navigateTo, userPosition, following, onUserPan }: {
   return null;
 }
 
-function ColorMarker({ marker, selected, onUpdate, onDelete, onNavigate }: {
+function ColorMarker({ marker, selected, onUpdate, onDelete, onNavigate, onEditingChange }: {
   marker: MarkerData;
   selected: boolean;
   onUpdate: (id: string, data: MarkerFormData) => void;
   onDelete: (id: string) => void;
   onNavigate: (marker: MarkerData) => void;
+  onEditingChange: (editing: boolean) => void;
 }) {
   const icon = useMemo(() => createDotIcon(marker.color || '#ef4444', marker.name, selected), [marker.color, marker.name, selected]);
 
@@ -172,7 +183,13 @@ function ColorMarker({ marker, selected, onUpdate, onDelete, onNavigate }: {
           Edytuj trafiał w mapę i zamykał popup (React podmienia treść szybciej,
           niż przeglądarka dostarczy opóźniony event click). */}
       <Popup closeOnClick={false} keepInView>
-        <MarkerPopup marker={marker} onUpdate={onUpdate} onDelete={onDelete} onNavigate={onNavigate} />
+        <MarkerPopup
+          marker={marker}
+          onUpdate={onUpdate}
+          onDelete={onDelete}
+          onNavigate={onNavigate}
+          onEditingChange={onEditingChange}
+        />
       </Popup>
     </Marker>
   );
@@ -257,6 +274,8 @@ export default function Map({
   onMapClick, onUpdateMarker, onDeleteMarker, onNavigateTo, onUserPan, flyTo,
 }: Props) {
   const saved = getSavedView();
+  // Czy któryś popup jest w trybie edycji — wtedy klik w mapę go nie zamyka
+  const editingRef = useRef(false);
   const userIcon = useMemo(
     () => (navigateTo && userHeading != null ? createHeadingIcon(userHeading) : userLocationIcon),
     [navigateTo, userHeading]
@@ -274,7 +293,7 @@ export default function Map({
       />
       <SaveViewHandler />
       <ZoomLabelScaler />
-      <ClickHandler mode={mode} onMapClick={onMapClick} />
+      <ClickHandler mode={mode} onMapClick={onMapClick} editingRef={editingRef} />
       <FlyToHandler flyTo={flyTo} />
       <NavigationFollow
         navigateTo={navigateTo}
@@ -299,6 +318,7 @@ export default function Map({
           onUpdate={onUpdateMarker}
           onDelete={onDeleteMarker}
           onNavigate={onNavigateTo}
+          onEditingChange={(editing) => { editingRef.current = editing; }}
         />
       ))}
 

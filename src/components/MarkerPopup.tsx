@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMap } from 'react-leaflet';
+import { useMap, useMapEvent } from 'react-leaflet';
 import type { MarkerData, MarkerFormData } from '../lib/types';
 import { MARKER_COLORS } from '../lib/types';
 import { parseCoords } from '../lib/geo';
@@ -9,9 +9,11 @@ interface Props {
   onUpdate: (id: string, data: MarkerFormData) => void;
   onDelete: (id: string) => void;
   onNavigate: (marker: MarkerData) => void;
+  // Informuje mapę, że trwa edycja (wtedy klik w mapę nie zamyka popupu)
+  onEditingChange?: (editing: boolean) => void;
 }
 
-export default function MarkerPopup({ marker, onUpdate, onDelete, onNavigate }: Props) {
+export default function MarkerPopup({ marker, onUpdate, onDelete, onNavigate, onEditingChange }: Props) {
   const map = useMap();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(marker.name);
@@ -23,6 +25,26 @@ export default function MarkerPopup({ marker, onUpdate, onDelete, onNavigate }: 
   const coords = parseCoords(coordsText);
   const coordsInvalid = coordsText.trim() !== '' && coords === null;
 
+  function startEdit() {
+    setEditing(true);
+    onEditingChange?.(true);
+  }
+
+  // Wyjście z edycji z porzuceniem zmian — używane przez „Anuluj" i krzyżyk popupu
+  function cancelEdit() {
+    setName(marker.name);
+    setDescription(marker.description);
+    setColor(marker.color || '#ef4444');
+    setCoordsText(`${marker.lat.toFixed(6)}, ${marker.lng.toFixed(6)}`);
+    setEditing(false);
+    onEditingChange?.(false);
+  }
+
+  // Zamknięcie popupu (krzyżyk) traktujemy jak „Anuluj"
+  useMapEvent('popupclose', () => {
+    if (editing) cancelEdit();
+  });
+
   function handleSave() {
     if (!name.trim() || !coords) return;
     onUpdate(marker.id, {
@@ -33,6 +55,7 @@ export default function MarkerPopup({ marker, onUpdate, onDelete, onNavigate }: 
       lng: coords.lng,
     });
     setEditing(false);
+    onEditingChange?.(false);
   }
 
   function handleDelete() {
@@ -92,7 +115,7 @@ export default function MarkerPopup({ marker, onUpdate, onDelete, onNavigate }: 
             Zapisz
           </button>
           <button
-            onClick={() => setEditing(false)}
+            onClick={cancelEdit}
             className="px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
           >
             Anuluj
@@ -122,7 +145,7 @@ export default function MarkerPopup({ marker, onUpdate, onDelete, onNavigate }: 
           Nawiguj
         </button>
         <button
-          onClick={() => setEditing(true)}
+          onClick={startEdit}
           className="px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
         >
           Edytuj
