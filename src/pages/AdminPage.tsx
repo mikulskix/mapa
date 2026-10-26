@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
@@ -82,6 +82,16 @@ export default function AdminPage() {
     await updateDoc(doc(db, 'registrations', uid), { status: 'rejected' });
     await updateDoc(doc(db, 'users', uid, 'profile', 'main'), { status: 'rejected' });
     setUsers((prev) => prev.map((u) => u.uid === uid ? { ...u, status: 'rejected' } : u));
+  }
+
+  // Usuwa odrzuconą osobę z listy: kasuje zgłoszenie i jej profil.
+  // Uwaga: samo konto logowania zostaje w Firebase Auth (usunięcie go wymaga
+  // uprawnień serwerowych), ale bez profilu nie ma dostępu do żadnych danych.
+  async function handleDelete(uid: string, email: string) {
+    if (!confirm(`Usunąć ${email} z listy? Osoba straci profil i zniknie z panelu.`)) return;
+    await deleteDoc(doc(db, 'registrations', uid));
+    await deleteDoc(doc(db, 'users', uid, 'profile', 'main'));
+    setUsers((prev) => prev.filter((u) => u.uid !== uid));
   }
 
   // Zapisz kategorie do Firestore
@@ -298,6 +308,14 @@ export default function AdminPage() {
                         className="px-3 py-1.5 text-sm rounded-md bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
                       >
                         Odrzuć
+                      </button>
+                    )}
+                    {u.status === 'rejected' && (
+                      <button
+                        onClick={() => handleDelete(u.uid, u.email)}
+                        className="px-3 py-1.5 text-sm rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                      >
+                        Usuń
                       </button>
                     )}
                     {u.status === 'approved' && (

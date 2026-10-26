@@ -7,42 +7,65 @@ service cloud.firestore {
         && request.auth.token.email == 'mikulskix@gmail.com';
     }
 
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Dostęp do danych mapy ma tylko osoba z zatwierdzonym profilem
     function isApproved() {
       return request.auth != null
         && get(/databases/$(database)/documents/users/$(request.auth.uid)/profile/main).data.status == 'approved';
     }
 
-    // Per-user profile (auth identity, approval status)
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      allow read, update: if isAdmin();
+    // Profil użytkownika: tożsamość, status zatwierdzenia i koperta z kluczem.
+    //
+    // NAJWAŻNIEJSZA REGUŁA W CAŁYM PLIKU: właściciel NIE MOŻE sam zmienić
+    // swojego pola "status". Gdyby mógł, każda zarejestrowana osoba
+    // przyznałaby sobie dostęp do pinezek jednym poleceniem w przeglądarce.
+    match /users/{userId}/profile/main {
+      allow read: if isOwner(userId) || isAdmin();
+
+      // Zakładając konto można ustawić wyłącznie status "pending"
+      allow create: if isAdmin()
+        || (isOwner(userId) && request.resource.data.status == 'pending');
+
+      // Właściciel zapisuje tylko kopertę klucza — status musi zostać bez zmian
+      allow update: if isAdmin()
+        || (isOwner(userId) && request.resource.data.status == resource.data.status);
+
+      allow delete: if isAdmin();
     }
 
-    // Registrations list (admin approval panel)
+    // Zgłoszenia rejestracyjne (panel admina)
     match /registrations/{docId} {
-      allow create: if request.auth != null && request.auth.uid == docId;
-      allow read, update: if isAdmin();
+      // Można utworzyć tylko własne zgłoszenie i tylko jako "pending"
+      allow create: if isAdmin()
+        || (isOwner(docId) && request.resource.data.status == 'pending');
+      allow read, update, delete: if isAdmin();
     }
 
-    // Workspace config: salt + verifier for the shared passphrase.
-    // Any logged-in user may read (salt is not secret); only admin writes/creates it.
+    // Konfiguracja workspace: sól i weryfikator hasła bazowego.
+    //
+    // Odczyt ograniczony do osób zatwierdzonych: weryfikator pozwala
+    // sprawdzać kolejne hasła poza aplikacją, bez żadnego limitu prób.
+    // Wcześniej mógł go pobrać każdy zalogowany, także odrzucony.
     match /workspace/{document=**} {
-      allow read: if request.auth != null;
+      allow read: if isApproved() || isAdmin();
       allow write: if isAdmin();
     }
 
-    // Shared, client-side-encrypted markers — approved users have full access.
+    // Pinezki — zaszyfrowane po stronie klienta, tylko dla zatwierdzonych
     match /markers/{id} {
       allow read, write: if isApproved();
     }
 
-    // Shared backups — approved users may read and create.
-    // (Restore overwrites everything but is restricted to admin in the UI.)
+    // Kopie zapasowe. Zapis i kasowanie są potrzebne wszystkim zatwierdzonym,
+    // bo automatyczna kopia usuwa przy okazji wpisy starsze niż 7 dni.
     match /backups/{id} {
       allow read, write: if isApproved();
     }
 
-    // Kategorie kolorów — zatwierdzone osoby mogą czytać, tylko admin może zapisywać.
+    // Kategorie kolorów — zatwierdzone osoby czytają, tylko admin zapisuje
     match /categories/{document=**} {
       allow read: if isApproved();
       allow write: if isAdmin();
