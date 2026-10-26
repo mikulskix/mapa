@@ -8,7 +8,12 @@ interface Props {
 
 export default function Compass({ movementHeading }: Props) {
   const [heading, setHeading] = useState<number | null>(null);
-  const [needsPermission, setNeedsPermission] = useState(false);
+  // iOS wymaga zgody użytkownika na dostęp do czujnika — wykrywamy to od razu,
+  // bo na innych systemach kompas startuje sam
+  const [needsPermission, setNeedsPermission] = useState(() => {
+    const DOE = window.DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> };
+    return typeof DOE?.requestPermission === 'function';
+  });
 
   const handleOrientation = useCallback((ev: Event) => {
     const e = ev as OrientationEvent;
@@ -29,17 +34,15 @@ export default function Compass({ movementHeading }: Props) {
   }, [handleOrientation]);
 
   useEffect(() => {
-    const DOE = window.DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> };
-    if (DOE && typeof DOE.requestPermission === 'function') {
-      setNeedsPermission(true);
-    } else {
+    // Bez pytania o zgodę (Android/desktop) nasłuch uruchamiamy od razu
+    if (!needsPermission) {
       start();
     }
     return () => {
       window.removeEventListener('deviceorientationabsolute', handleOrientation);
       window.removeEventListener('deviceorientation', handleOrientation);
     };
-  }, [start, handleOrientation]);
+  }, [needsPermission, start, handleOrientation]);
 
   const requestPerm = useCallback(async () => {
     const DOE = window.DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> };

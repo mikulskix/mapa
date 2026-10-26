@@ -59,29 +59,6 @@ export function useMarkers() {
     return unsub;
   }, [workspaceKey]);
 
-  // Auto-backup: once per day
-  useEffect(() => {
-    if (!workspaceKey || loading) return;
-
-    const checkAndBackup = async () => {
-      try {
-        const backupsCol = collection(db, 'backups');
-        const q2 = query(backupsCol, orderBy('createdAt', 'desc'), limit(1));
-        const snap = await getDocs(q2);
-        const lastBackup = snap.docs[0]?.data()?.createdAt || 0;
-        const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-
-        if (lastBackup < oneDayAgo && markers.length > 0) {
-          await createBackupInternal();
-        }
-      } catch {
-        // silent fail for auto-backup
-      }
-    };
-
-    checkAndBackup();
-  }, [workspaceKey, loading, markers.length]);
-
   const createBackupInternal = useCallback(async () => {
     if (!workspaceKey) return;
     const markersCol = collection(db, 'markers');
@@ -110,6 +87,30 @@ export function useMarkers() {
 
     return backupId;
   }, [workspaceKey]);
+
+  // Auto-backup: once per day
+  useEffect(() => {
+    if (!workspaceKey || loading) return;
+
+    const checkAndBackup = async () => {
+      try {
+        const backupsCol = collection(db, 'backups');
+        const q2 = query(backupsCol, orderBy('createdAt', 'desc'), limit(1));
+        const snap = await getDocs(q2);
+        const lastBackup = snap.docs[0]?.data()?.createdAt || 0;
+        const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+
+        if (lastBackup < oneDayAgo && markers.length > 0) {
+          await createBackupInternal();
+        }
+      } catch {
+        // silent fail for auto-backup
+      }
+    };
+
+    checkAndBackup();
+  }, [workspaceKey, loading, markers.length, createBackupInternal]);
+
 
   const addMarker = useCallback(
     async (form: MarkerFormData) => {
