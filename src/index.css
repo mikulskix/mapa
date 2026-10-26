@@ -6,6 +6,13 @@
 html, body, #root {
   height: 100%;
   margin: 0;
+  /* Interfejs ma się nie powiększać przy gestach na mapie:
+     - manipulation wyłącza powiększanie podwójnym tapnięciem
+     - overscroll-behavior blokuje odświeżanie strony pociągnięciem w dół
+     - text-size-adjust powstrzymuje system przed skalowaniem tekstu */
+  touch-action: manipulation;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
 }
 
 .marker-label {
