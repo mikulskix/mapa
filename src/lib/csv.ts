@@ -1,4 +1,3 @@
-import Papa from 'papaparse';
 import type { MarkerData, MarkerFormData } from './types';
 
 interface CsvRow {
@@ -9,7 +8,9 @@ interface CsvRow {
   color?: string;
 }
 
-export function parseCsv(file: File): Promise<{ valid: MarkerFormData[]; invalidCount: number }> {
+// papaparse doładowujemy dynamicznie — nie obciąża startu aplikacji
+export async function parseCsv(file: File): Promise<{ valid: MarkerFormData[]; invalidCount: number }> {
+  const { default: Papa } = await import('papaparse');
   return new Promise((resolve, reject) => {
     Papa.parse<CsvRow>(file, {
       header: true,
@@ -48,7 +49,7 @@ export function parseCsv(file: File): Promise<{ valid: MarkerFormData[]; invalid
   });
 }
 
-export function exportCsv(markers: MarkerData[]): void {
+export async function exportCsv(markers: MarkerData[]): Promise<void> {
   const data = markers.map((m) => ({
     name: m.name,
     latitude: m.lat,
@@ -57,6 +58,7 @@ export function exportCsv(markers: MarkerData[]): void {
     color: m.color || '#ef4444',
   }));
 
+  const { default: Papa } = await import('papaparse');
   const csv = Papa.unparse(data);
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);

@@ -1,11 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, lazy, Suspense } from 'react';
 import type { MarkerData, MarkerFormData } from '../lib/types';
 import { MARKER_COLORS } from '../lib/types';
 import { exportCsv } from '../lib/csv';
-import CsvImportModal from './CsvImportModal';
-import BackupModal from './BackupModal';
 import type { BackupInfo } from '../hooks/useMarkers';
 import type { CategoryMap } from '../hooks/useCategories';
+
+// Modale doładowywane dopiero przy otwarciu (nie obciążają startu aplikacji)
+const CsvImportModal = lazy(() => import('./CsvImportModal'));
+const BackupModal = lazy(() => import('./BackupModal'));
 
 interface Props {
   markers: MarkerData[];
@@ -314,20 +316,20 @@ export default function Sidebar({
       </div>
 
       {showImport && (
-        <CsvImportModal
+        <Suspense fallback={null}><CsvImportModal
           onImport={onImport}
           onClose={() => setShowImport(false)}
-        />
+        /></Suspense>
       )}
 
       {showBackup && (
-        <BackupModal
+        <Suspense fallback={null}><BackupModal
           isAdmin={isAdmin}
           onClose={() => setShowBackup(false)}
           onCreateBackup={onCreateBackup}
           onListBackups={onListBackups}
           onRestoreBackup={onRestoreBackup}
-        />
+        /></Suspense>
       )}
     </>
   );

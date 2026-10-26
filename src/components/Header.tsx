@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useDarkMode } from '../hooks/useDarkMode';
-import ChangePassphraseModal from './ChangePassphraseModal';
+// Modal zmiany hasła bazowego — doładowywany dopiero przy otwarciu
+const ChangePassphraseModal = lazy(() => import('./ChangePassphraseModal'));
 
 interface Props {
   satellite: boolean;
@@ -89,7 +90,11 @@ export default function Header({ satellite, onToggleLayer }: Props) {
         </button>
       </div>
 
-      {showChangePass && <ChangePassphraseModal onClose={() => setShowChangePass(false)} />}
+      {showChangePass && (
+        <Suspense fallback={null}>
+          <ChangePassphraseModal onClose={() => setShowChangePass(false)} />
+        </Suspense>
+      )}
     </header>
   );
 }
