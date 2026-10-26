@@ -3,6 +3,7 @@ import { useMap, useMapEvent } from 'react-leaflet';
 import type { MarkerData, MarkerFormData } from '../lib/types';
 import { MARKER_COLORS } from '../lib/types';
 import { parseCoords } from '../lib/geo';
+import { shareMarker } from '../lib/share';
 
 interface Props {
   marker: MarkerData;
@@ -21,6 +22,9 @@ export default function MarkerPopup({ marker, onUpdate, onDelete, onNavigate, on
   const [color, setColor] = useState(marker.color || '#ef4444');
   // Edytowalne współrzędne (format Google, np. "50.926257, 14.975718")
   const [coordsText, setCoordsText] = useState(`${marker.lat.toFixed(6)}, ${marker.lng.toFixed(6)}`);
+
+  // Krótki komunikat po udostępnieniu (np. "Skopiowano")
+  const [shareMsg, setShareMsg] = useState('');
 
   const coords = parseCoords(coordsText);
   const coordsInvalid = coordsText.trim() !== '' && coords === null;
@@ -44,6 +48,18 @@ export default function MarkerPopup({ marker, onUpdate, onDelete, onNavigate, on
   useMapEvent('popupclose', () => {
     if (editing) cancelEdit();
   });
+
+  // Udostępnia punkt: na telefonie systemowe menu, na komputerze schowek
+  async function handleShare() {
+    const result = await shareMarker(marker);
+    if (result === 'cancelled') return;
+    setShareMsg(
+      result === 'copied' ? 'Skopiowano do schowka'
+        : result === 'failed' ? 'Nie udało się udostępnić'
+        : ''
+    );
+    if (result !== 'shared') setTimeout(() => setShareMsg(''), 2500);
+  }
 
   function handleSave() {
     if (!name.trim() || !coords) return;
@@ -151,12 +167,21 @@ export default function MarkerPopup({ marker, onUpdate, onDelete, onNavigate, on
           Edytuj
         </button>
         <button
+          onClick={handleShare}
+          className="px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
+        >
+          Udostępnij
+        </button>
+        <button
           onClick={handleDelete}
           className="px-2 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200"
         >
           Usuń
         </button>
       </div>
+      {shareMsg && (
+        <p className="text-xs text-green-700 mt-1">{shareMsg}</p>
+      )}
     </div>
   );
 }
